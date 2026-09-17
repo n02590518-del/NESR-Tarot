@@ -1,0 +1,1 @@
+NESR Tarot Android App
