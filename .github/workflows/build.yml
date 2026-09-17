@@ -6,6 +6,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -25,12 +28,11 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: إنشاء مشروع Android
+      - name: إنشاء تطبيق NESR Tarot
         shell: bash
         run: |
+
           mkdir -p app/src/main/java/com/nesrtarot/app
-          mkdir -p app/src/main/res/layout
-          mkdir -p app/src/main/res/values
 
           cat > settings.gradle <<'EOF'
           pluginManagement {
@@ -50,13 +52,18 @@ jobs:
           }
 
           rootProject.name = "NESR-Tarot"
-          include ':app'
+          include ":app"
           EOF
 
           cat > build.gradle <<'EOF'
           plugins {
               id 'com.android.application' version '8.7.3' apply false
           }
+          EOF
+
+          cat > gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+          android.useAndroidX=true
           EOF
 
           cat > app/build.gradle <<'EOF'
@@ -72,41 +79,25 @@ jobs:
                   applicationId 'com.nesrtarot.app'
                   minSdk 24
                   targetSdk 35
-                  versionCode 1
-                  versionName '1.0'
+                  versionCode 2
+                  versionName '2.0'
+              }
+
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
               }
           }
           EOF
 
-          cat > app/src/main/res/values/colors.xml <<'EOF'
-          <resources>
-              <color name="background">#0D0A12</color>
-              <color name="card">#1B1524</color>
-              <color name="gold">#D8B56A</color>
-              <color name="text">#F7F1E7</color>
-              <color name="muted">#B9AFC5</color>
-          </resources>
-          EOF
-
-          cat > app/src/main/res/values/themes.xml <<'EOF'
-          <resources>
-              <style name="AppTheme" parent="android:style/Theme.Material.NoActionBar">
-                  <item name="android:fontFamily">sans</item>
-                  <item name="android:windowLightStatusBar">false</item>
-                  <item name="android:statusBarColor">@color/background</item>
-                  <item name="android:navigationBarColor">@color/background</item>
-                  <item name="android:windowBackground">@color/background</item>
-              </style>
-          </resources>
-          EOF
-
           cat > app/src/main/AndroidManifest.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
               <application
-                  android:theme="@style/AppTheme"
+                  android:theme="@android:style/Theme.Material.NoActionBar"
                   android:label="NESR Tarot"
-                  android:allowBackup="true"
+                  android:allowBackup="false"
                   android:supportsRtl="true">
 
                   <activity
@@ -115,204 +106,317 @@ jobs:
                       android:exported="true">
 
                       <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
                       </intent-filter>
 
                   </activity>
-
               </application>
 
           </manifest>
-          EOF
-
-          cat > app/src/main/res/layout/activity_main.xml <<'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-
-          <ScrollView
-              xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"
-              android:background="@color/background">
-
-              <LinearLayout
-                  android:layout_width="match_parent"
-                  android:layout_height="wrap_content"
-                  android:orientation="vertical"
-                  android:padding="20dp"
-                  android:gravity="center_horizontal">
-
-                  <TextView
-                      android:layout_width="match_parent"
-                      android:layout_height="wrap_content"
-                      android:text="NESR"
-                      android:textColor="@color/gold"
-                      android:textSize="40sp"
-                      android:textStyle="bold"
-                      android:gravity="center"
-                      android:layout_marginTop="30dp"/>
-
-                  <TextView
-                      android:layout_width="match_parent"
-                      android:layout_height="wrap_content"
-                      android:text="TAROT • ENERGY"
-                      android:textColor="@color/muted"
-                      android:textSize="13sp"
-                      android:gravity="center"
-                      android:layout_marginBottom="35dp"/>
-
-                  <TextView
-                      android:layout_width="match_parent"
-                      android:layout_height="wrap_content"
-                      android:text="اختار قراءتك"
-                      android:textColor="@color/text"
-                      android:textSize="26sp"
-                      android:textStyle="bold"
-                      android:gravity="right"
-                      android:layout_marginBottom="8dp"/>
-
-                  <TextView
-                      android:layout_width="match_parent"
-                      android:layout_height="wrap_content"
-                      android:text="اسأل سؤالك واختار نوع القراءة المناسب ليك"
-                      android:textColor="@color/muted"
-                      android:textSize="14sp"
-                      android:gravity="right"
-                      android:layout_marginBottom="25dp"/>
-
-                  <Button
-                      android:id="@+id/yesNo"
-                      android:layout_width="match_parent"
-                      android:layout_height="60dp"
-                      android:text="❓  نعم أو لا"
-                      android:textSize="18sp"
-                      android:layout_marginBottom="12dp"/>
-
-                  <Button
-                      android:id="@+id/feelings"
-                      android:layout_width="match_parent"
-                      android:layout_height="60dp"
-                      android:text="❤️  مشاعر وتفكير"
-                      android:textSize="18sp"
-                      android:layout_marginBottom="12dp"/>
-
-                  <Button
-                      android:id="@+id/intentions"
-                      android:layout_width="match_parent"
-                      android:layout_height="60dp"
-                      android:text="🔥  نوايا وخطوات"
-                      android:textSize="18sp"
-                      android:layout_marginBottom="12dp"/>
-
-                  <Button
-                      android:id="@+id/message"
-                      android:layout_width="match_parent"
-                      android:layout_height="60dp"
-                      android:text="💌  رسالة من الحبيب"
-                      android:textSize="18sp"
-                      android:layout_marginBottom="12dp"/>
-
-                  <Button
-                      android:id="@+id/returnReading"
-                      android:layout_width="match_parent"
-                      android:layout_height="60dp"
-                      android:text="🔄  الرجوع ومتى"
-                      android:textSize="18sp"
-                      android:layout_marginBottom="12dp"/>
-
-                  <Button
-                      android:id="@+id/currentEnergy"
-                      android:layout_width="match_parent"
-                      android:layout_height="60dp"
-                      android:text="✨  الطاقة الحالية"
-                      android:textSize="18sp"
-                      android:layout_marginBottom="12dp"/>
-
-                  <Button
-                      android:id="@+id/future"
-                      android:layout_width="match_parent"
-                      android:layout_height="60dp"
-                      android:text="🔮  القادم"
-                      android:textSize="18sp"
-                      android:layout_marginBottom="12dp"/>
-
-                  <Button
-                      android:id="@+id/fullReading"
-                      android:layout_width="match_parent"
-                      android:layout_height="60dp"
-                      android:text="👑  قراءة كاملة"
-                      android:textSize="18sp"
-                      android:layout_marginBottom="25dp"/>
-
-                  <TextView
-                      android:layout_width="match_parent"
-                      android:layout_height="wrap_content"
-                      android:text="🔴 NESR LIVE"
-                      android:textColor="@color/gold"
-                      android:textSize="20sp"
-                      android:textStyle="bold"
-                      android:gravity="center"
-                      android:layout_marginBottom="10dp"/>
-
-                  <TextView
-                      android:layout_width="match_parent"
-                      android:layout_height="wrap_content"
-                      android:text="تابع اللايف والقراءات الجديدة"
-                      android:textColor="@color/muted"
-                      android:textSize="14sp"
-                      android:gravity="center"
-                      android:layout_marginBottom="30dp"/>
-
-              </LinearLayout>
-
-          </ScrollView>
           EOF
 
           cat > app/src/main/java/com/nesrtarot/app/MainActivity.java <<'EOF'
           package com.nesrtarot.app;
 
           import android.app.Activity;
+          import android.app.AlertDialog;
+          import android.graphics.Color;
+          import android.graphics.Typeface;
           import android.os.Bundle;
+          import android.view.Gravity;
+          import android.view.View;
           import android.widget.Button;
-          import android.widget.Toast;
+          import android.widget.LinearLayout;
+          import android.widget.ScrollView;
+          import android.widget.TextView;
+          import java.util.ArrayList;
+          import java.util.Collections;
+          import java.util.Random;
 
           public class MainActivity extends Activity {
+
+              Random random = new Random();
+
+              String[] cards = {
+                  "الأحمق","الساحر","الكاهنة العليا","الإمبراطورة","الإمبراطور",
+                  "العاشقان","العربة","القوة","الناسك","عجلة الحظ",
+                  "العدالة","المعلّق","الموت","الاعتدال","الشيطان",
+                  "البرج","النجمة","القمر","الشمس","الحُكم","العالم",
+                  "آس العصي","اثنان العصي","ثلاثة العصي","أربعة العصي",
+                  "خمسة العصي","ستة العصي","سبعة العصي","ثمانية العصي",
+                  "تسعة العصي","عشرة العصي","آس الكؤوس","اثنان الكؤوس",
+                  "ثلاثة الكؤوس","أربعة الكؤوس","خمسة الكؤوس","ستة الكؤوس",
+                  "سبعة الكؤوس","ثمانية الكؤوس","تسعة الكؤوس","عشرة الكؤوس",
+                  "آس السيوف","اثنان السيوف","ثلاثة السيوف","أربعة السيوف",
+                  "خمسة السيوف","ستة السيوف","سبعة السيوف","ثمانية السيوف",
+                  "تسعة السيوف","عشرة السيوف","آس العملات","اثنان العملات",
+                  "ثلاثة العملات","أربعة العملات","خمسة العملات","ستة العملات",
+                  "سبعة العملات","ثمانية العملات","تسعة العملات","عشرة العملات",
+                  "صفحة العصي","فارس العصي","ملكة العصي","ملك العصي",
+                  "صفحة الكؤوس","فارس الكؤوس","ملكة الكؤوس","ملك الكؤوس",
+                  "صفحة السيوف","فارس السيوف","ملكة السيوف","ملك السيوف",
+                  "صفحة العملات","فارس العملات","ملكة العملات","ملك العملات"
+              };
+
+              String[] meanings = {
+                  "بداية مختلفة عن اللي فات، وفيه خطوة ممكن تفتح اتجاه جديد.",
+                  "فيه قدرة على تحريك الموضوع، والفعل هنا أهم من الكلام.",
+                  "فيه حاجة مش متقالة بالكامل، والحدس واخد مساحة كبيرة.",
+                  "اهتمام ورغبة في القرب، لكن الأمان مهم قبل الانفتاح.",
+                  "تمسك بالرأي أو الموقف، مع وجود اهتمام مش ظاهر كله.",
+                  "رابط عاطفي واضح وقرار له تأثير على الطرفين.",
+                  "حركة بعد فترة ثبات، وممكن يحصل تصرف عملي قريب.",
+                  "مشاعر قوية لكن عليها سيطرة، والشخص مش بيظهر كل اللي جواه.",
+                  "تفكير ومراجعة للماضي قبل اتخاذ خطوة.",
+                  "الظروف بتتغير وحاجة كانت ثابتة ممكن تتحرك.",
+                  "محاولة للوصول لحل متوازن بدل رد فعل سريع.",
+                  "فيه تأخير، لكنه محتاج إعادة ترتيب أكتر من كونه نهاية.",
+                  "تغيير في شكل الموقف وبداية طريقة مختلفة.",
+                  "هدوء وترميم تدريجي، والنتيجة محتاجة وقت.",
+                  "تعلق أو غيرة أو شد وجذب محتاج يتفهم.",
+                  "موقف مفاجئ ممكن يكشف حقيقة أو يغير طريقة التعامل.",
+                  "أمل موجود وتحسن تدريجي بعد فترة تقيلة.",
+                  "لخبطة أو معلومات ناقصة، فلا تستعجل الحكم.",
+                  "انفراجة ووضوح وفرصة لكلام أخف.",
+                  "مراجعة وقرار بعد فترة تفكير.",
+                  "مرحلة بتكتمل والصورة بتبقى أوضح.",
+                  "شرارة جديدة ورغبة في المبادرة.",
+                  "تخطيط للخطوة الجاية بدل الاندفاع.",
+                  "اتساع في الاختيارات وظهور فرصة.",
+                  "استقرار ولقاء أو تجمع فيه طاقة لطيفة.",
+                  "اختلاف في وجهات النظر محتاج هدوء.",
+                  "اعتراف بقيمة شخص أو موقف.",
+                  "دفاع عن الحدود والموقف الشخصي.",
+                  "رسالة أو حركة سريعة ممكن تغير الإيقاع.",
+                  "إصرار رغم التعب مع احتياج لإعادة ترتيب.",
+                  "مسؤوليات كتير مأثرة على باقي الأمور.",
+                  "فضول وخبر جديد يحتاج متابعة.",
+                  "حماس واندفاع، لكن لازم يتوزن.",
+                  "جاذبية وحضور ورغبة في التحرك.",
+                  "قيادة ومبادرة وثقة.",
+                  "بداية إحساس أو فرصة عاطفية.",
+                  "تقارب وتبادل مشاعر.",
+                  "فرحة أو كلام من القلب.",
+                  "فتور مؤقت أو فرصة مش واخدة حقها.",
+                  "أثر قديم لسه مأثر.",
+                  "حنين للماضي.",
+                  "اختيارات ومشاعر متداخلة.",
+                  "الابتعاد عن وضع مرهق بحثًا عن راحة.",
+                  "نتيجة تدي إحساس إن التعب كان له معنى.",
+                  "اكتمال عاطفي واطمئنان.",
+                  "رسالة حساسة أو بداية تعبير.",
+                  "مبادرة عاطفية ومحاولة تقرب.",
+                  "مشاعر عميقة واهتمام هادي.",
+                  "نضج عاطفي وتحكم في الانفعال.",
+                  "وضوح وكلام صريح.",
+                  "تردد بين اتجاهين.",
+                  "جرح قديم أو كلمة لسه مأثرة.",
+                  "راحة وإعادة ترتيب الأفكار.",
+                  "خلاف أو شد وجذب.",
+                  "انتقال لوضع أهدى.",
+                  "حذر ومراقبة قبل الحركة.",
+                  "خوف من النتيجة أكبر من الواقع.",
+                  "تفكير زائد وقلق.",
+                  "قرار أو رسالة مباشرة.",
+                  "معلومة جديدة أو سؤال محتاج إجابة.",
+                  "حركة سريعة.",
+                  "حدود قوية ووضوح.",
+                  "قرار عقلاني مع وجود مشاعر.",
+                  "فرصة عملية أو بداية ملموسة.",
+                  "محاولة موازنة أكثر من شيء.",
+                  "تعاون ومجهود مشترك.",
+                  "تمسك وخوف من فقدان شيء مهم.",
+                  "إحساس بعدم الأمان محتاج طمأنة.",
+                  "تقييم للمجهود وانتظار النتيجة.",
+                  "النتيجة محتاجة صبر بسيط.",
+                  "بداية ثابتة.",
+                  "خطوة بطيئة لكنها جادة.",
+                  "اهتمام واقعي بالتفاصيل.",
+                  "استقرار وتحمل مسؤولية."
+              };
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
-                  setContentView(R.layout.activity_main);
 
-                  setButton(R.id.yesNo, "نعم أو لا");
-                  setButton(R.id.feelings, "مشاعر وتفكير");
-                  setButton(R.id.intentions, "نوايا وخطوات");
-                  setButton(R.id.message, "رسالة من الحبيب");
-                  setButton(R.id.returnReading, "الرجوع ومتى");
-                  setButton(R.id.currentEnergy, "الطاقة الحالية");
-                  setButton(R.id.future, "القادم");
-                  setButton(R.id.fullReading, "قراءة كاملة");
+                  LinearLayout main = new LinearLayout(this);
+                  main.setOrientation(LinearLayout.VERTICAL);
+                  main.setPadding(25,35,25,35);
+                  main.setGravity(Gravity.CENTER_HORIZONTAL);
+                  main.setBackgroundColor(Color.rgb(13,10,18));
+
+                  ScrollView scroll = new ScrollView(this);
+                  scroll.addView(main);
+
+                  TextView logo = text("NESR",40,Color.rgb(216,181,106));
+                  main.addView(logo,new LinearLayout.LayoutParams(-1,70));
+
+                  TextView sub = text("TAROT • ENERGY",14,Color.LTGRAY);
+                  main.addView(sub,new LinearLayout.LayoutParams(-1,55));
+
+                  TextView title = text("اختار قراءتك",25,Color.WHITE);
+                  title.setGravity(Gravity.RIGHT);
+                  main.addView(title,new LinearLayout.LayoutParams(-1,60));
+
+                  TextView info = text("قراءات متنوعة ومتجددة كل مرة",15,Color.GRAY);
+                  info.setGravity(Gravity.RIGHT);
+                  main.addView(info,new LinearLayout.LayoutParams(-1,45));
+
+                  addButton(main,"❓  نعم أو لا","yes");
+                  addButton(main,"❤️  مشاعر وتفكير","feel");
+                  addButton(main,"🔥  نوايا وخطوات","intent");
+                  addButton(main,"💌  رسالة من الحبيب","message");
+                  addButton(main,"🔄  الرجوع ومتى","return");
+                  addButton(main,"✨  الطاقة الحالية","energy");
+                  addButton(main,"🔮  القادم","future");
+                  addButton(main,"👑  قراءة كاملة","full");
+
+                  TextView footer = text("NESR LIVE\nللتسلية والتأمل",14,Color.GRAY);
+                  footer.setGravity(Gravity.CENTER);
+                  main.addView(footer,new LinearLayout.LayoutParams(-1,100));
+
+                  setContentView(scroll);
               }
 
-              private void setButton(int id, final String name) {
-                  Button button = findViewById(id);
+              TextView text(String value,int size,int color) {
+                  TextView t = new TextView(this);
+                  t.setText(value);
+                  t.setTextSize(size);
+                  t.setTextColor(color);
+                  t.setGravity(Gravity.CENTER);
+                  t.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+                  return t;
+              }
 
-                  button.setOnClickListener(v ->
-                      Toast.makeText(
-                          MainActivity.this,
-                          "أنت اخترت: " + name,
-                          Toast.LENGTH_SHORT
-                      ).show()
-                  );
+              void addButton(LinearLayout main,String label,String type) {
+                  Button b = new Button(this);
+                  b.setText(label);
+                  b.setTextSize(17);
+                  b.setAllCaps(false);
+                  b.setOnClickListener(v -> showReading(type,label));
+                  LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-1,65);
+                  p.setMargins(0,6,0,6);
+                  main.addView(b,p);
+              }
+
+              int[] pick(int count) {
+                  ArrayList<Integer> list = new ArrayList<>();
+                  for(int i=0;i<cards.length;i++) list.add(i);
+                  Collections.shuffle(list,random);
+                  int[] result = new int[count];
+                  for(int i=0;i<count;i++) result[i]=list.get(i);
+                  return result;
+              }
+
+              void showReading(String type,String title) {
+                  String result = reading(type);
+
+                  new AlertDialog.Builder(this)
+                      .setTitle("🔮 "+title)
+                      .setMessage(result)
+                      .setPositiveButton("قراءة تانية", (d,w)->showReading(type,title))
+                      .setNegativeButton("إغلاق",null)
+                      .show();
+              }
+
+              String reading(String type) {
+
+                  if(type.equals("yes")) {
+                      int[] p=pick(1);
+                      boolean yes=random.nextBoolean();
+
+                      return (yes?"نعم\n\n":"لأ\n\n")
+                          +"الكارت: "+cards[p[0]]+"\n\n"
+                          +meanings[p[0]]
+                          +"\n\n👀 اللي لفت انتباهي:\n"
+                          +(yes
+                          ?"فيه مساحة للحاجة دي تحصل، لكن لازم يكون فيه حركة واضحة على أرض الواقع."
+                          :"الوقت الحالي مش مدي نتيجة مباشرة، وفيه عامل محتاج يتغير الأول.")
+                          +"\n\n✨ الخلاصة:\n"
+                          +(yes?"الإجابة أقرب لنعم، لكن مش شرط تكون فورية."
+                          :"الإجابة الحالية أقرب للرفض أو التأجيل.");
+                  }
+
+                  int[] p=pick(4);
+                  StringBuilder s=new StringBuilder();
+
+                  if(type.equals("feel")) {
+                      s.append("❤️ المشاعر\n").append(cards[p[0]]).append("\n").append(meanings[p[0]]);
+                      s.append("\n\n🧠 التفكير\n").append(cards[p[1]]).append("\n").append(meanings[p[1]]);
+                      s.append("\n\n💬 اللي مش بيتقال\n").append(cards[p[2]]).append("\n").append(meanings[p[2]]);
+                      s.append("\n\n✨ الخلاصة\nفيه إحساس وتفكير، لكن طريقة التعبير عنهم مش بنفس السرعة.");
+                      return s.toString();
+                  }
+
+                  if(type.equals("intent")) {
+                      s.append("🔥 النوايا\n").append(cards[p[0]]).append("\n").append(meanings[p[0]]);
+                      s.append("\n\n👣 الخطوة الأقرب\n").append(cards[p[1]]).append("\n").append(meanings[p[1]]);
+                      s.append("\n\n⛔ العائق\n").append(cards[p[2]]).append("\n").append(meanings[p[2]]);
+                      s.append("\n\n✨ الاتجاه\n").append(cards[p[3]]).append("\n").append(meanings[p[3]]);
+                      return s.toString();
+                  }
+
+                  if(type.equals("message")) {
+                      s.append("💌 رسالة من الحبيب\n\n");
+                      s.append("«الموضوع لسه واخد مساحة عندي. ");
+                      s.append(meanings[p[0]]).append(" ");
+                      s.append(meanings[p[1]]);
+                      s.append(" ومش كل اللي جوايا سهل أقوله مرة واحدة.»");
+                      s.append("\n\n👀 ورا الكلام:\n");
+                      s.append(cards[p[2]]).append(" — ").append(meanings[p[2]]);
+                      s.append("\n\n✨ الإحساس الأخير:\n").append(meanings[p[3]]);
+                      return s.toString();
+                  }
+
+                  if(type.equals("return")) {
+                      s.append("🔄 الرجوع\n\n");
+                      s.append(cards[p[0]]).append(" — ").append(meanings[p[0]]);
+                      s.append("\n\n📩 الحركة الأولى\n");
+                      s.append(cards[p[1]]).append(" — ").append(meanings[p[1]]);
+                      s.append("\n\n⏳ التوقيت\n");
+                      s.append("الطاقة أقرب لفترة قصيرة إلى متوسطة. الأول ممكن يظهر تواصل أو حركة بسيطة، وبعدها يتحدد شكل الرجوع.");
+                      s.append("\n\n🔎 العامل المؤثر\n");
+                      s.append(cards[p[2]]).append(" — ").append(meanings[p[2]]);
+                      s.append("\n\n✨ الاتجاه\n");
+                      s.append(cards[p[3]]).append(" — ").append(meanings[p[3]]);
+                      return s.toString();
+                  }
+
+                  if(type.equals("energy")) {
+                      s.append("✨ الطاقة الحالية\n\n");
+                      s.append(cards[p[0]]).append(" — ").append(meanings[p[0]]);
+                      s.append("\n\n🧠 التفكير\n").append(cards[p[1]]).append(" — ").append(meanings[p[1]]);
+                      s.append("\n\n❤️ الجانب العاطفي\n").append(cards[p[2]]).append(" — ").append(meanings[p[2]]);
+                      s.append("\n\n🌿 الاتجاه\n").append(cards[p[3]]).append(" — ").append(meanings[p[3]]);
+                      return s.toString();
+                  }
+
+                  if(type.equals("future")) {
+                      s.append("🔮 القادم\n\n");
+                      s.append("أول حركة:\n").append(cards[p[0]]).append(" — ").append(meanings[p[0]]);
+                      s.append("\n\nبعدها:\n").append(cards[p[1]]).append(" — ").append(meanings[p[1]]);
+                      s.append("\n\nخبر أو تواصل:\n").append(cards[p[2]]).append(" — ").append(meanings[p[2]]);
+                      s.append("\n\n✨ الاتجاه:\n").append(cards[p[3]]).append(" — ").append(meanings[p[3]]);
+                      return s.toString();
+                  }
+
+                  s.append("👑 القراءة الكاملة\n\n");
+                  s.append("كارت العلاقة:\n").append(cards[p[0]]).append(" — ").append(meanings[p[0]]);
+                  s.append("\n\nكارت المشاعر والتفكير:\n").append(cards[p[1]]).append(" — ").append(meanings[p[1]]);
+                  s.append("\n\nكارت النوايا والخطوات:\n").append(cards[p[2]]).append(" — ").append(meanings[p[2]]);
+                  s.append("\n\nكارت القادم:\n").append(cards[p[3]]).append(" — ").append(meanings[p[3]]);
+                  s.append("\n\n⏳ التوقيت:\nالحركة بتبان مع التصرفات الفعلية، ومش مرتبطة بيوم ثابت.");
+                  s.append("\n\n✨ الخلاصة:\nالقراءة بتوضح اتجاه الطاقة الحالي، والاختيارات والتصرفات هي اللي بتحدد شكل النتيجة.");
+                  return s.toString();
               }
           }
           EOF
 
-      - name: بناء ملف APK
-        shell: bash
-        run: |
-          gradle assembleDebug --no-daemon --stacktrace
+      - name: بناء APK
+        run: gradle assembleDebug --no-daemon --stacktrace
 
-      - name: رفع ملف APK
+      - name: رفع APK
         uses: actions/upload-artifact@v4
         with:
           name: NESR-Tarot-APK
