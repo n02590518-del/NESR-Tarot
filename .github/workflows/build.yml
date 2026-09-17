@@ -1,0 +1,371 @@
+name: Build NESR Tarot APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Create Android project
+        shell: bash
+        run: |
+          mkdir -p app/src/main/java/com/nesrtarot/app
+          mkdir -p app/src/main/res/values
+
+          cat > settings.gradle.kts <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+
+          rootProject.name = "NESR-Tarot"
+          include(":app")
+          EOF
+
+          cat > build.gradle.kts <<'EOF'
+          plugins {
+              id("com.android.application") version "8.7.3" apply false
+              id("org.jetbrains.kotlin.android") version "2.0.21" apply false
+              id("org.jetbrains.kotlin.plugin.compose") version "2.0.21" apply false
+          }
+          EOF
+
+          cat > app/build.gradle.kts <<'EOF'
+          plugins {
+              id("com.android.application")
+              id("org.jetbrains.kotlin.android")
+              id("org.jetbrains.kotlin.plugin.compose")
+          }
+
+          android {
+              namespace = "com.nesrtarot.app"
+              compileSdk = 35
+
+              defaultConfig {
+                  applicationId = "com.nesrtarot.app"
+                  minSdk = 24
+                  targetSdk = 35
+                  versionCode = 1
+                  versionName = "1.0"
+              }
+          }
+
+          dependencies {
+              implementation(platform("androidx.compose:compose-bom:2024.12.01"))
+              implementation("androidx.activity:activity-compose:1.10.0")
+              implementation("androidx.compose.material3:material3")
+              implementation("androidx.compose.ui:ui")
+              implementation("androidx.compose.ui:ui-tooling-preview")
+          }
+          EOF
+
+          cat > app/src/main/res/values/styles.xml <<'EOF'
+          <resources>
+              <style name="AppTheme" parent="android:style/Theme.Material.NoActionBar">
+                  <item name="android:fontFamily">sans</item>
+                  <item name="android:statusBarColor">#0D0A12</item>
+                  <item name="android:navigationBarColor">#0D0A12</item>
+                  <item name="android:windowLightStatusBar">false</item>
+              </style>
+          </resources>
+          EOF
+
+          cat > app/src/main/AndroidManifest.xml <<'EOF'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <application
+                  android:theme="@style/AppTheme"
+                  android:label="NESR Tarot"
+                  android:allowBackup="true"
+                  android:supportsRtl="true">
+
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true">
+
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+
+          cat > app/src/main/java/com/nesrtarot/app/MainActivity.kt <<'EOF'
+          package com.nesrtarot.app
+
+          import android.os.Bundle
+          import androidx.activity.ComponentActivity
+          import androidx.activity.compose.setContent
+          import androidx.compose.foundation.background
+          import androidx.compose.foundation.clickable
+          import androidx.compose.foundation.layout.*
+          import androidx.compose.foundation.lazy.grid.GridCells
+          import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+          import androidx.compose.foundation.lazy.grid.items
+          import androidx.compose.foundation.shape.RoundedCornerShape
+          import androidx.compose.material3.*
+          import androidx.compose.runtime.*
+          import androidx.compose.ui.Alignment
+          import androidx.compose.ui.Modifier
+          import androidx.compose.ui.graphics.Color
+          import androidx.compose.ui.text.font.FontWeight
+          import androidx.compose.ui.text.style.TextAlign
+          import androidx.compose.ui.unit.dp
+          import androidx.compose.ui.unit.sp
+
+          data class Reading(
+              val name: String,
+              val icon: String,
+              val description: String
+          )
+
+          val readings = listOf(
+              Reading("نعم أو لا", "❓", "إجابة مباشرة على سؤالك"),
+              Reading("رسالة من الحبيب", "💌", "رسالة من طاقته"),
+              Reading("سؤال مختصر", "🔮", "قراءة سريعة وواضحة"),
+              Reading("سؤال تفصيلي", "🃏", "قراءة أعمق للسؤال"),
+              Reading("الطاقة الحالية", "✨", "طاقة الفترة الحالية"),
+              Reading("مشاعر وتفكير", "❤️", "مشاعره وتفكيره"),
+              Reading("نوايا وخطوات", "🔥", "النوايا والخطوة القادمة"),
+              Reading("الرجوع ومتى", "🔄", "اتجاه الرجوع والتوقيت"),
+              Reading("بشارة", "🌟", "رسالة إيجابية قادمة"),
+              Reading("القادم", "🌙", "ما القادم في الفترة المقبلة"),
+              Reading("قراءة كاملة", "👑", "قراءة شاملة")
+          )
+
+          class MainActivity : ComponentActivity() {
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  setContent {
+                      NESRApp()
+                  }
+              }
+          }
+
+          @Composable
+          fun NESRApp() {
+
+              var selectedReading by remember {
+                  mutableStateOf<Reading?>(null)
+              }
+
+              MaterialTheme(
+                  colorScheme = darkColorScheme(
+                      background = Color(0xFF0D0A12),
+                      surface = Color(0xFF18131F),
+                      primary = Color(0xFFD8B56A),
+                      secondary = Color(0xFF9D7BBA),
+                      onBackground = Color(0xFFF7F1E7),
+                      onSurface = Color(0xFFF7F1E7)
+                  )
+              ) {
+
+                  if (selectedReading == null) {
+
+                      HomeScreen(
+                          onReadingSelected = {
+                              selectedReading = it
+                          }
+                      )
+
+                  } else {
+
+                      QuestionScreen(
+                          reading = selectedReading!!,
+                          onBack = {
+                              selectedReading = null
+                          }
+                      )
+                  }
+              }
+          }
+
+          @Composable
+          fun HomeScreen(
+              onReadingSelected: (Reading) -> Unit
+          ) {
+
+              Column(
+                  modifier = Modifier
+                      .fillMaxSize()
+                      .background(Color(0xFF0D0A12))
+                      .padding(20.dp)
+              ) {
+
+                  Spacer(modifier = Modifier.height(24.dp))
+
+                  Text(
+                      text = "NESR",
+                      color = Color(0xFFD8B56A),
+                      fontSize = 38.sp,
+                      fontWeight = FontWeight.Bold,
+                      modifier = Modifier.fillMaxWidth(),
+                      textAlign = TextAlign.Center
+                  )
+
+                  Text(
+                      text = "TAROT • ENERGY",
+                      color = Color(0xFFB9AFC5),
+                      fontSize = 12.sp,
+                      letterSpacing = 4.sp,
+                      modifier = Modifier.fillMaxWidth(),
+                      textAlign = TextAlign.Center
+                  )
+
+                  Spacer(modifier = Modifier.height(28.dp))
+
+                  Text(
+                      text = "اختار قراءتك",
+                      fontSize = 25.sp,
+                      fontWeight = FontWeight.Bold,
+                      modifier = Modifier.fillMaxWidth(),
+                      textAlign = TextAlign.Right
+                  )
+
+                  Text(
+                      text = "اسأل سؤالك وخد وقتك في الاختيار",
+                      color = Color(0xFFB9AFC5),
+                      modifier = Modifier
+                          .fillMaxWidth()
+                          .padding(top = 5.dp, bottom = 18.dp),
+                      textAlign = TextAlign.Right
+                  )
+
+                  LazyVerticalGrid(
+                      columns = GridCells.Fixed(2),
+                      verticalArrangement = Arrangement.spacedBy(12.dp),
+                      horizontalArrangement = Arrangement.spacedBy(12.dp),
+                      modifier = Modifier.fillMaxSize()
+                  ) {
+
+                      items(readings) { reading ->
+
+                          Card(
+                              modifier = Modifier
+                                  .fillMaxWidth()
+                                  .height(145.dp)
+                                  .clickable {
+                                      onReadingSelected(reading)
+                                  },
+                              shape = RoundedCornerShape(20.dp),
+                              colors = CardDefaults.cardColors(
+                                  containerColor = Color(0xFF18131F)
+                              )
+                          ) {
+
+                              Column(
+                                  modifier = Modifier
+                                      .fillMaxSize()
+                                      .padding(16.dp),
+                                  horizontalAlignment = Alignment.End,
+                                  verticalArrangement = Arrangement.Center
+                              ) {
+
+                                  Text(
+                                      reading.icon,
+                                      fontSize = 30.sp
+                                  )
+
+                                  Spacer(modifier = Modifier.height(7.dp))
+
+                                  Text(
+                                      reading.name,
+                                      fontSize = 17.sp,
+                                      fontWeight = FontWeight.Bold
+                                  )
+
+                                  Spacer(modifier = Modifier.height(3.dp))
+
+                                  Text(
+                                      reading.description,
+                                      fontSize = 10.sp,
+                                      color = Color(0xFFB9AFC5),
+                                      textAlign = TextAlign.Right
+                                  )
+                              }
+                          }
+                      }
+                  }
+              }
+          }
+
+          @Composable
+          fun QuestionScreen(
+              reading: Reading,
+              onBack: () -> Unit
+          ) {
+
+              var question by remember {
+                  mutableStateOf("")
+              }
+
+              var started by remember {
+                  mutableStateOf(false)
+              }
+
+              Column(
+                  modifier = Modifier
+                      .fillMaxSize()
+                      .background(Color(0xFF0D0A12))
+                      .padding(20.dp)
+              ) {
+
+                  Text(
+                      text = "‹ رجوع",
+                      color = Color(0xFFD8B56A),
+                      fontSize = 17.sp,
+                      modifier = Modifier.clickable {
+                          onBack()
+                      }
+                  )
+
+                  Spacer(modifier = Modifier.height(28.dp))
+
+                  Text(
+                      reading.icon,
+                      fontSize = 55.sp,
+                      modifier = Modifier.fillMaxWidth(),
+                      textAlign = TextAlign.Center
+                  )
+
+                  Text(
+                      reading.name,
+                      fontSize = 27.sp,
+                      fontWeight = FontWeight.Bold,
+                      modifier = Modifier.fillMaxWidth(),
+                      textAlign = TextAlign.Center
+                  )
+
+                  Spacer(modifier = Modifier.height
